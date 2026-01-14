@@ -1,6 +1,6 @@
 {
   "name": "lltz",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "author": "Utkarsh Kukreti <utkarshkukreti@gmail.com>",
   "description": "A high-performance, memory-efficient offline timezone lookup library for TypeScript using a custom binary format and quadtree spatial indexing.",
   "keywords": [
