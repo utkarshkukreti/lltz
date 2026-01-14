@@ -1,0 +1,15 @@
+[project]
+name = "lltz"
+version = "0.0.0"
+requires-python = ">=3.14"
+dependencies = []
+
+[tool.ruff]
+line-length = 100
+
+[dependency-groups]
+dev = [
+    "shapely>=2.1.2",
+    "tqdm>=4.67.1",
+    "typer>=0.21.1",
+]

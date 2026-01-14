@@ -1,0 +1,53 @@
+{
+  "name": "lltz",
+  "version": "0.0.0",
+  "author": "Utkarsh Kukreti <utkarshkukreti@gmail.com>",
+  "description": "A high-performance, memory-efficient offline timezone lookup library for TypeScript using a custom binary format and quadtree spatial indexing.",
+  "keywords": [
+    "geo",
+    "latitude",
+    "longitude",
+    "lookup",
+    "timezone"
+  ],
+  "homepage": "https://github.com/utkarshkukreti/lltz",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/utkarshkukreti/lltz.git"
+  },
+  "bugs": {
+    "url": "https://github.com/utkarshkukreti/lltz/issues"
+  },
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./data/*": "./data/*"
+  },
+  "files": [
+    "data/timezones.lltz",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc && tsdown",
+    "prepublishOnly": "make && pnpm build",
+    "lint": "prettier --check .",
+    "format": "prettier --write .",
+    "test": "node --max-old-space-size=8192 tests/index.ts",
+    "bench": "node benches/index.ts",
+    "bench:memory": "node benches/memory.ts lltz:timezones && node benches/memory.ts geo-tz:timezones"
+  },
+  "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "4.7.0",
+    "@types/node": "24.10.8",
+    "geo-tz": "8.1.5",
+    "prettier": "3.7.4",
+    "tinybench": "6.0.0",
+    "tsdown": "0.19.0",
+    "typescript": "5.9.3"
+  }
+}

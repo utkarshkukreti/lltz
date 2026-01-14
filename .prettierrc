@@ -1,0 +1,9 @@
+{
+  "trailingComma": "all",
+  "semi": false,
+  "singleQuote": true,
+  "arrowParens": "avoid",
+  "printWidth": 100,
+  "importOrder": ["node:", "", "<THIRD_PARTY_MODULES>", "", "^[.]"],
+  "plugins": ["@ianvs/prettier-plugin-sort-imports"]
+}
