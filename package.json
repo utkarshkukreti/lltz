@@ -26,6 +26,7 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": "./dist/index.js",
+    "./server": "./dist/server.js",
     "./data/*": "./data/*"
   },
   "files": [

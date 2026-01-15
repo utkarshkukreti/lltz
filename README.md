@@ -28,6 +28,21 @@ The other variants, `timezones-1970.lltz` and `timezones-now.lltz`, can be downl
 
 ### Node.js / Bun
 
+#### Simple Usage
+
+```typescript
+import * as Lltz from 'lltz/server'
+
+const lookup = Lltz.make() // Automatically loads the built-in timezones.lltz file
+
+const timezones = lookup(40.7128, -74.006) // New York
+console.log(timezones) // ['America/New_York']
+```
+
+#### Manual Data Loading
+
+If you need to use a different data file or have custom requirements:
+
 ```typescript
 import fs from 'node:fs'
 
