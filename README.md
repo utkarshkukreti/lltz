@@ -12,6 +12,48 @@ This library uses GeoJSON data from [timezone-boundary-builder](https://github.c
 - **Universal**: Runs in both server (Node.js, Bun) and client (browser) environments.
 - **High Accuracy**: Validated to match [`geo-tz`](https://www.npmjs.com/package/geo-tz) results in **>99.99%** of cases.
 
+## Performance
+
+The `benches` directory contains performance benchmarks comparing `lltz` with `geo-tz`. These are the performance numbers obtained on Node 24.13.0 on an Apple M4 Pro CPU.
+
+### CPU
+
+```
+$ node benches/index.ts lltz:timezones geo-tz:timezones
+┌─────────┬───────────────────────────────────────────────────┬───────────────────┬────────────────────┬────────────────────────┬────────────────────────┬─────────┐
+│ (index) │ Task name                                         │ Latency avg (ns)  │ Latency med (ns)   │ Throughput avg (ops/s) │ Throughput med (ops/s) │ Samples │
+├─────────┼───────────────────────────────────────────────────┼───────────────────┼────────────────────┼────────────────────────┼────────────────────────┼─────────┤
+│ 0       │ 'lltz: timezones: 1000x <random>'                 │ '41876 ± 0.20%'   │ '41250 ± 1458.0'   │ '24112 ± 0.10%'        │ '24242 ± 851'          │ 23880   │
+│ 1       │ 'lltz: timezones: 1000x <random> in central US'   │ '31205 ± 0.23%'   │ '30791 ± 583.00'   │ '32386 ± 0.07%'        │ '32477 ± 626'          │ 32047   │
+│ 2       │ 'geo-tz: timezones: 1000x <random>'               │ '1809670 ± 8.08%' │ '1270167 ± 425375' │ '819 ± 3.92%'          │ '787 ± 279'            │ 553     │
+│ 3       │ 'geo-tz: timezones: 1000x <random> in central US' │ '237485 ± 1.28%'  │ '231583 ± 4875.0'  │ '4291 ± 0.23%'         │ '4318 ± 91'            │ 4211    │
+└─────────┴───────────────────────────────────────────────────┴───────────────────┴────────────────────┴────────────────────────┴────────────────────────┴─────────┘
+```
+
+lltz is roughly 30x faster than geo-tz for random lookups in the entire world and 7x faster for random lookups in the central US.
+
+### Memory
+
+```
+$ node benches/memory.ts lltz:timezones && node benches/memory.ts geo-tz:timezones
+lltz: timezones
+Δ time: 56.807 ms
+Δ rss: 57.891 MiB
+Δ heapTotal: 4.250 MiB
+Δ heapUsed: 0.824 MiB
+Δ external: 42.179 MiB
+Δ arrayBuffers: 42.015 MiB
+geo-tz: timezones
+Δ time: 1560.153 ms
+Δ rss: 1581.656 MiB
+Δ heapTotal: 1528.344 MiB
+Δ heapUsed: 1431.117 MiB
+Δ external: -1.598 MiB
+Δ arrayBuffers: -1.688 MiB
+```
+
+Loading the data from disk and then querying 1 million random points is 27x faster with lltz than with geo-tz and uses 27x less memory.
+
 ## Usage
 
 ### Installation
