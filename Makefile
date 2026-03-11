@@ -1,5 +1,5 @@
 NAMES := timezones timezones-1970 timezones-now
-VERSION := 2025c
+VERSION := 2026a
 
 _ = $(shell mkdir -p data)
 
