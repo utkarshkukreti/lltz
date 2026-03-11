@@ -25,7 +25,7 @@ wheels = [
 
 [[package]]
 name = "lltz"
-version = "0.0.1"
+version = "0.0.0"
 source = { virtual = "." }
 
 [package.dev-dependencies]
