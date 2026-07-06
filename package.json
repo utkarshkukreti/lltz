@@ -20,7 +20,7 @@
   },
   "license": "MIT",
   "type": "module",
-  "packageManager": "pnpm@10.33.4",
+  "packageManager": "pnpm@10.34.4",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -44,11 +44,11 @@
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "4.7.1",
-    "@types/node": "24.12.4",
+    "@types/node": "24.13.2",
     "geo-tz": "8.1.7",
-    "prettier": "3.8.3",
+    "prettier": "3.9.4",
     "tinybench": "6.0.2",
-    "tsdown": "0.22.0",
-    "typescript": "5.9.3"
+    "tsdown": "0.22.3",
+    "typescript": "6.0.3"
   }
 }
