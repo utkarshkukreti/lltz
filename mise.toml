@@ -3,6 +3,7 @@ _.file = ".env"
 
 [tools]
 node = "24.18.0"
+uv = "0.11.28"
 
 [settings]
 lockfile = true
