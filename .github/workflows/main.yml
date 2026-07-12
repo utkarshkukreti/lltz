@@ -11,10 +11,10 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v6
-      - uses: astral-sh/setup-uv@v7
       - uses: jdx/mise-action@v4
       - run: corepack enable
       - run: mise reshim
+      - run: uv sync
       - run: make -j
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
