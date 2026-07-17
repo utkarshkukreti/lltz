@@ -15,8 +15,8 @@ importers:
         specifier: 24.13.3
         version: 24.13.3
       geo-tz:
-        specifier: 8.1.7
-        version: 8.1.7
+        specifier: 8.1.8
+        version: 8.1.8
       prettier:
         specifier: 3.9.4
         version: 3.9.4
@@ -641,8 +641,8 @@ packages:
   file-source@0.6.1:
     resolution: {integrity: sha512-1R1KneL7eTXmXfKxC10V/9NeGOdbsAXJ+lQ//fvvcHUgtaZcZDWNJNblxAoVOyV1cj45pOtUrR3vZTBwqcW8XA==}
 
-  geo-tz@8.1.7:
-    resolution: {integrity: sha512-skkwQunTD1hpixwESUv8GeLLl8DElpUmnZfp9trQVgVGVIRTeQJHmCcWELCr8lsiVKdu661TWzR9hsdlGCEEKA==}
+  geo-tz@8.1.8:
+    resolution: {integrity: sha512-i+5koPn3/fzDkEROczIu3QqCEg0uQi2xugDjaVaarK0djuJorLeKHtWrscIGhnsbpPMHc5cLluaRxu3HXtU1ZA==}
     engines: {node: '>=16'}
 
   geobuf@3.0.2:
@@ -1277,7 +1277,7 @@ snapshots:
     dependencies:
       stream-source: 0.3.5
 
-  geo-tz@8.1.7:
+  geo-tz@8.1.8:
     dependencies:
       '@turf/boolean-point-in-polygon': 7.3.4
       '@turf/helpers': 7.3.4
