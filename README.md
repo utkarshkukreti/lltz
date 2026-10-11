@@ -6,7 +6,7 @@ This library uses GeoJSON data from [timezone-boundary-builder](https://github.c
 
 ## Features
 
-- **Fast**: Performs **24-46 million lookups per second** (~22-43ns per op) on an Apple M4 Pro CPU.
+- **Fast**: Performs **29-47 million lookups per second** (~21-35ns per op) on an Apple M4 Pro CPU.
 - **Tiny Memory Footprint**: Operates directly on raw binary data (ArrayBuffer/Uint8Array). Memory usage is limited to the LLTZ binary file size (approximately **26-44MiB**), with no additional object overhead.
 - **Zero Dependencies**: A lightweight, standalone TypeScript library with no external runtime dependencies.
 - **Universal**: Runs in both server (Node.js, Bun) and client (browser) environments.
@@ -23,10 +23,10 @@ $ node benches/index.ts lltz:timezones geo-tz:timezones
 ┌─────────┬───────────────────────────────────────────────────┬───────────────────┬────────────────────┬────────────────────────┬────────────────────────┬─────────┐
 │ (index) │ Task name                                         │ Latency avg (ns)  │ Latency med (ns)   │ Throughput avg (ops/s) │ Throughput med (ops/s) │ Samples │
 ├─────────┼───────────────────────────────────────────────────┼───────────────────┼────────────────────┼────────────────────────┼────────────────────────┼─────────┤
-│ 0       │ 'lltz: timezones: 1000x <random>'                 │ '42723 ± 0.18%'   │ '42000 ± 1250.0'   │ '23592 ± 0.09%'        │ '23810 ± 706'          │ 23407   │
-│ 1       │ 'lltz: timezones: 1000x <random> in central US'   │ '21839 ± 0.19%'   │ '21500 ± 709.00'   │ '46240 ± 0.06%'        │ '46512 ± 1568'         │ 45790   │
-│ 2       │ 'geo-tz: timezones: 1000x <random>'               │ '1561095 ± 5.79%' │ '1184375 ± 414333' │ '887 ± 3.75%'          │ '844 ± 314'            │ 641     │
-│ 3       │ 'geo-tz: timezones: 1000x <random> in central US' │ '315474 ± 0.98%'  │ '305792 ± 12709'   │ '3242 ± 0.34%'         │ '3270 ± 138'           │ 3170    │
+│ 0       │ 'lltz: timezones: 1000x <random>'                 │ '35348 ± 0.17%'   │ '35000 ± 1250.0'   │ '28527 ± 0.08%'        │ '28571 ± 1022'         │ 28290   │
+│ 1       │ 'lltz: timezones: 1000x <random> in central US'   │ '21483 ± 0.14%'   │ '21250 ± 667.00'   │ '46906 ± 0.06%'        │ '47059 ± 1432'         │ 46550   │
+│ 2       │ 'geo-tz: timezones: 1000x <random>'               │ '1375519 ± 5.44%' │ '1027500 ± 379292' │ '1017 ± 3.56%'         │ '973 ± 395'            │ 727     │
+│ 3       │ 'geo-tz: timezones: 1000x <random> in central US' │ '307128 ± 0.92%'  │ '299312 ± 12542'   │ '3328 ± 0.33%'         │ '3341 ± 141'           │ 3256    │
 └─────────┴───────────────────────────────────────────────────┴───────────────────┴────────────────────┴────────────────────────┴────────────────────────┴─────────┘
 ```
 

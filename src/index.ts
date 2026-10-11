@@ -26,6 +26,13 @@ const DEFAULT_LATITUDE_90 = [
 const DEFAULT_LONGITUDE_ABS_180 = ['Etc/GMT+12', 'Etc/GMT-12']
 
 /**
+ * 'Etc/GMT' timezone IDs for UTC offsets -12 to +12, indexed by offset + 12.
+ */
+const ETC_GMT = Array.from({ length: 25 }, (_, index) =>
+  index === 12 ? 'Etc/GMT' : index > 12 ? `Etc/GMT-${index - 12}` : `Etc/GMT+${12 - index}`,
+)
+
+/**
  * Checks if the point (x, y) is inside or on the boundary of a polygon ring using the ray casting
  * algorithm.
  * @param dataView - The DataView of the binary data.
@@ -231,13 +238,9 @@ export const make = (arrayBufferOrUint8Array: ArrayBuffer | Uint8Array): Lookup 
     } else if (longitude === -180 || longitude === 180) {
       return DEFAULT_LONGITUDE_ABS_180
     } else {
-      const output: string[] = []
       const min = Math.ceil(longitude / 15 - 0.5)
       const max = Math.floor(longitude / 15 + 0.5)
-      for (let n = min; n <= max; n++) {
-        output.push(n === 0 ? 'Etc/GMT' : n > 0 ? `Etc/GMT-${n}` : `Etc/GMT+${-n}`)
-      }
-      return output
+      return ETC_GMT.slice(min + 12, max + 13)
     }
   }
 }
