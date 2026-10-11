@@ -40,7 +40,7 @@ for (const library of libraries) {
     bench.add(`${library}: ${name}: 1000x <random> in central US`, () => {
       for (let i = 0; i < 1000; i++) {
         const latitude = Math.random() * 10 + 35
-        const longitude = Math.random() * 30 - 85
+        const longitude = Math.random() * 30 - 115
         get(latitude, longitude)
       }
     })

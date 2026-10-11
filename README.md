@@ -6,7 +6,7 @@ This library uses GeoJSON data from [timezone-boundary-builder](https://github.c
 
 ## Features
 
-- **Fast**: Performs **25-35 million lookups per second** (~30-40ns per op) on an Apple M4 Pro CPU.
+- **Fast**: Performs **24-46 million lookups per second** (~22-43ns per op) on an Apple M4 Pro CPU.
 - **Tiny Memory Footprint**: Operates directly on raw binary data (ArrayBuffer/Uint8Array). Memory usage is limited to the LLTZ binary file size (approximately **26-44MiB**), with no additional object overhead.
 - **Zero Dependencies**: A lightweight, standalone TypeScript library with no external runtime dependencies.
 - **Universal**: Runs in both server (Node.js, Bun) and client (browser) environments.
@@ -23,14 +23,14 @@ $ node benches/index.ts lltz:timezones geo-tz:timezones
 ┌─────────┬───────────────────────────────────────────────────┬───────────────────┬────────────────────┬────────────────────────┬────────────────────────┬─────────┐
 │ (index) │ Task name                                         │ Latency avg (ns)  │ Latency med (ns)   │ Throughput avg (ops/s) │ Throughput med (ops/s) │ Samples │
 ├─────────┼───────────────────────────────────────────────────┼───────────────────┼────────────────────┼────────────────────────┼────────────────────────┼─────────┤
-│ 0       │ 'lltz: timezones: 1000x <random>'                 │ '41876 ± 0.20%'   │ '41250 ± 1458.0'   │ '24112 ± 0.10%'        │ '24242 ± 851'          │ 23880   │
-│ 1       │ 'lltz: timezones: 1000x <random> in central US'   │ '31205 ± 0.23%'   │ '30791 ± 583.00'   │ '32386 ± 0.07%'        │ '32477 ± 626'          │ 32047   │
-│ 2       │ 'geo-tz: timezones: 1000x <random>'               │ '1809670 ± 8.08%' │ '1270167 ± 425375' │ '819 ± 3.92%'          │ '787 ± 279'            │ 553     │
-│ 3       │ 'geo-tz: timezones: 1000x <random> in central US' │ '237485 ± 1.28%'  │ '231583 ± 4875.0'  │ '4291 ± 0.23%'         │ '4318 ± 91'            │ 4211    │
+│ 0       │ 'lltz: timezones: 1000x <random>'                 │ '42723 ± 0.18%'   │ '42000 ± 1250.0'   │ '23592 ± 0.09%'        │ '23810 ± 706'          │ 23407   │
+│ 1       │ 'lltz: timezones: 1000x <random> in central US'   │ '21839 ± 0.19%'   │ '21500 ± 709.00'   │ '46240 ± 0.06%'        │ '46512 ± 1568'         │ 45790   │
+│ 2       │ 'geo-tz: timezones: 1000x <random>'               │ '1561095 ± 5.79%' │ '1184375 ± 414333' │ '887 ± 3.75%'          │ '844 ± 314'            │ 641     │
+│ 3       │ 'geo-tz: timezones: 1000x <random> in central US' │ '315474 ± 0.98%'  │ '305792 ± 12709'   │ '3242 ± 0.34%'         │ '3270 ± 138'           │ 3170    │
 └─────────┴───────────────────────────────────────────────────┴───────────────────┴────────────────────┴────────────────────────┴────────────────────────┴─────────┘
 ```
 
-lltz is roughly 30x faster than geo-tz for random lookups in the entire world and 7x faster for random lookups in the central US.
+lltz is roughly 30x faster than geo-tz for random lookups in the entire world and 14x faster for random lookups in the central US.
 
 ### Memory
 
