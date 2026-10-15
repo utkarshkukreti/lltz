@@ -3,9 +3,9 @@ import fs from 'node:fs'
 
 let library: 'lltz' | 'geo-tz' | null = null
 
-let name: 'timezones' | 'timezones-1970' | 'timezones-now' | null = null
+let variant: 'all' | '1970' | 'now' | null = null
 
-const [library_, name_] = (process.argv[2] ?? '').split(':')
+const [library_, variant_] = (process.argv[2] ?? '').split(':')
 
 switch (library_) {
   case 'lltz':
@@ -14,32 +14,32 @@ switch (library_) {
     break
 }
 
-switch (name_) {
-  case 'timezones':
-  case 'timezones-1970':
-  case 'timezones-now':
-    name = name_
+switch (variant_) {
+  case 'all':
+  case '1970':
+  case 'now':
+    variant = variant_
     break
 }
 
-if (library === null || name === null) {
-  console.error('usage: node benches/memory.ts <library> <name>')
+if (library === null || variant === null) {
+  console.error('usage: node benches/memory.ts <library>:<variant>')
   process.exit(1)
 }
 
-console.log(`${library}: ${name}`)
+console.log(`${library}: ${variant}`)
 
 const memoryUsageBefore = process.memoryUsage()
 const timeBefore = performance.now()
 
 const get =
   library === 'lltz'
-    ? (await import('../src/index.ts')).make(fs.readFileSync(`data/${name}.lltz`))
-    : name === 'timezones'
+    ? (await import('../src/index.ts')).make(fs.readFileSync('data/timezones.lltz'), variant)
+    : variant === 'all'
       ? (await import('geo-tz/all')).find
-      : name === 'timezones-1970'
+      : variant === '1970'
         ? (await import('geo-tz')).find
-        : name === 'timezones-now'
+        : variant === 'now'
           ? (await import('geo-tz/now')).find
           : null
 

@@ -3,10 +3,10 @@ VERSION := 2026e
 
 _ = $(shell mkdir -p data)
 
-all: $(NAMES:%=data/%.lltz)
+all: data/timezones.lltz
 
-data/%.lltz: data/%.geojson
-	uv run src/build.py $< $@
+data/timezones.lltz: $(NAMES:%=data/%.geojson)
+	uv run src/build.py $@ $^
 
 data/%.geojson:
 	curl -Lfs https://github.com/evansiroky/timezone-boundary-builder/releases/download/$(VERSION)/$*.geojson.zip > $@.zip

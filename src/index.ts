@@ -1,7 +1,14 @@
 /**
  * The expected header for the LLTZ binary file format.
  */
-const HEADER = 'LLTZ1\0\0\0'
+const HEADER = 'LLTZ2\0\0\0'
+
+/**
+ * The data variants, in the order their timezone mappings are stored in the binary format.
+ */
+const VARIANTS = ['all', '1970', 'now'] as const
+
+export type Variant = (typeof VARIANTS)[number]
 
 /**
  * The scale factor used to convert floating-point coordinates to integers in the binary format.
@@ -145,10 +152,14 @@ export type Lookup =
  * Creates a timezone lookup function from the provided binary data.
  *
  * @param arrayBufferOrUint8Array - The binary data containing the timezone database (LLTZ format).
+ * @param variant - The data variant to use: 'all' (default), '1970' or 'now'.
  * @returns {Lookup} A timezone lookup function.
  * @throws An error if the binary data is invalid.
  */
-export const make = (arrayBufferOrUint8Array: ArrayBuffer | Uint8Array): Lookup => {
+export const make = (
+  arrayBufferOrUint8Array: ArrayBuffer | Uint8Array,
+  variant: Variant = 'all',
+): Lookup => {
   const bytes = ArrayBuffer.isView(arrayBufferOrUint8Array)
     ? arrayBufferOrUint8Array
     : new Uint8Array(arrayBufferOrUint8Array)
@@ -162,10 +173,15 @@ export const make = (arrayBufferOrUint8Array: ArrayBuffer | Uint8Array): Lookup 
   offset += HEADER.length
   const timezonesLength = dataView.getUint16(offset, true)
   offset += 2
-  const timezones = new TextDecoder()
+  const names = new TextDecoder()
     .decode(bytes.subarray(offset, offset + timezonesLength))
     .split('\0')
   offset += timezonesLength
+  const mappingOffset = offset + VARIANTS.indexOf(variant) * names.length * 2
+  const timezones = names.map(
+    (_, index) => names[dataView.getUint16(mappingOffset + index * 2, true)]!,
+  )
+  offset += VARIANTS.length * names.length * 2
   const offsetsOffset = offset
   offset += 180 * 360 * 4
   const baseOffset = offset
@@ -222,7 +238,7 @@ export const make = (arrayBufferOrUint8Array: ArrayBuffer | Uint8Array): Lookup 
             )
             offset = offset_
             if (isIn) {
-              output.push(timezones[index]!)
+              if (!output.includes(timezones[index]!)) output.push(timezones[index]!)
               for (let k = j + 1; k < polygonsCount; k++) {
                 offset += 2 + dataView.getUint16(offset, true)
               }

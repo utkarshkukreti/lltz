@@ -123,20 +123,39 @@ def process_longitude(
     ]
 
 
-def main(geojson_path: Path, lltz_path: Path, *, quadtree_max_depth: int = 4):
+def map_timezones(
+    timezones: list[str],
+    geometries: list[shapely.geometry.base.BaseGeometry],
+    geojson_path: Path,
+) -> list[int]:
+    features = json.loads(geojson_path.read_text())["features"]
+    variant_geometries = [shapely.geometry.shape(feature["geometry"]) for feature in features]
+    mapping = []
+    for geometry in tqdm.tqdm(geometries, desc=geojson_path.name):
+        areas = shapely.area(shapely.intersection(geometry, variant_geometries))
+        ious = areas / (geometry.area + shapely.area(variant_geometries) - areas)
+        mapping.append(timezones.index(features[ious.argmax()]["properties"]["tzid"]))
+    return mapping
+
+
+def main(lltz_path: Path, geojson_paths: list[Path], *, quadtree_max_depth: int = 4):
     features = sorted(
-        json.loads(geojson_path.read_text())["features"],
+        json.loads(geojson_paths[0].read_text())["features"],
         key=lambda x: x["properties"]["tzid"],
     )
     timezones = [f["properties"]["tzid"] for f in features]
     geometries = [shapely.geometry.shape(feature["geometry"]) for feature in features]
+    mappings = [
+        list(range(len(timezones))),
+        *(map_timezones(timezones, geometries, path) for path in geojson_paths[1:]),
+    ]
     geometries = [
         shapely.affinity.affine_transform(geometry, [SCALE, 0, 0, SCALE, 180 * SCALE, 90 * SCALE])
         for geometry in geometries
     ]
     str_tree = shapely.STRtree(geometries)
     cells_buffers = []
-    for longitude in tqdm.tqdm(range(0, 360), desc=geojson_path.name):
+    for longitude in tqdm.tqdm(range(0, 360), desc=geojson_paths[0].name):
         box = shapely.box(
             longitude * SCALE - 1, 0 * SCALE - 1, (longitude + 1) * SCALE + 1, 180 * SCALE + 1
         )
@@ -161,10 +180,12 @@ def main(geojson_path: Path, lltz_path: Path, *, quadtree_max_depth: int = 4):
                 cells_offsets.append(value | len(cells_buffer))
                 cells_buffer.extend(buffer)
     output = bytearray()
-    output.extend(b"LLTZ1\x00\x00\x00")
+    output.extend(b"LLTZ2\x00\x00\x00")
     timezones_bytes = "\0".join(timezones).encode("utf-8")
     output.extend(struct.pack("<H", len(timezones_bytes)))
     output.extend(timezones_bytes)
+    for mapping in mappings:
+        output.extend(struct.pack(f"<{len(mapping)}H", *mapping))
     output.extend(struct.pack(f"<{len(cells_offsets)}I", *cells_offsets))
     output.extend(cells_buffer)
     lltz_path.parent.mkdir(parents=True, exist_ok=True)

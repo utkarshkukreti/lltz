@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 
-import { make as make_, type Lookup } from './index.ts'
+import { make as make_, type Lookup, type Variant } from './index.ts'
 
 const load = (): Uint8Array => {
   try {
@@ -20,10 +20,13 @@ const load = (): Uint8Array => {
  *
  * @param arrayBufferOrUint8Array - Optional binary data containing the timezone database (LLTZ
  * format). If not provided, the built-in `timezones.lltz` file will be automatically loaded.
+ * @param variant - The data variant to use: 'all' (default), '1970' or 'now'.
  * @returns {Lookup} A timezone lookup function.
  * @throws An error if the binary data is invalid or if the built-in data file cannot be loaded.
  */
-export const make = (arrayBufferOrUint8Array?: ArrayBuffer | Uint8Array): Lookup =>
-  make_(arrayBufferOrUint8Array ?? load())
+export const make = (
+  arrayBufferOrUint8Array?: ArrayBuffer | Uint8Array,
+  variant?: Variant,
+): Lookup => make_(arrayBufferOrUint8Array ?? load(), variant)
 
-export type { Lookup }
+export type { Lookup, Variant }

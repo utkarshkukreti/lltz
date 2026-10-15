@@ -15,28 +15,30 @@ const splitmix32 = (a: number) => () => {
   return ((t = t ^ (t >>> 15)) >>> 0) / 4294967296
 }
 
-const names = ['timezones', 'timezones-1970', 'timezones-now'] as const
+const variants = ['all', '1970', 'now'] as const
 
-for (const name of names) {
-  const get = Lltz.make(fs.readFileSync(`data/${name}.lltz`))
+const data = fs.readFileSync('data/timezones.lltz')
+
+for (const variant of variants) {
+  const get = Lltz.make(data, variant)
 
   const GeoTz =
-    name === 'timezones'
+    variant === 'all'
       ? await import('geo-tz/all')
-      : name === 'timezones-1970'
+      : variant === '1970'
         ? await import('geo-tz')
-        : name === 'timezones-now'
+        : variant === 'now'
           ? await import('geo-tz/now')
           : null
 
   assert(GeoTz !== null)
 
-  test(`geo-tz: ${name} (0.125° grid)`, () => {
+  test(`geo-tz: ${variant} (0.125° grid)`, () => {
     const expectedMismatches = {
-      timezones: 217,
-      'timezones-1970': 216,
-      'timezones-now': 213,
-    }[name]
+      all: 217,
+      '1970': 216,
+      now: 213,
+    }[variant]
     let mismatches = 0
     for (let latitude = -90; latitude <= 90; latitude += 1 / 8) {
       for (let longitude = -180; longitude <= 180; longitude += 1 / 8) {
@@ -47,19 +49,19 @@ for (const name of names) {
           our.some((timezone, index) => timezone !== their[index])
         ) {
           mismatches++
-          // console.log(JSON.stringify({ name, mismatches, latitude, longitude, our, their }))
+          // console.log(JSON.stringify({ variant, mismatches, latitude, longitude, our, their }))
         }
       }
     }
     assert.equal(mismatches, expectedMismatches)
   })
 
-  test(`geo-tz: ${name} (random)`, () => {
+  test(`geo-tz: ${variant} (random)`, () => {
     const expectedMismatches = {
-      timezones: 1,
-      'timezones-1970': 1,
-      'timezones-now': 1,
-    }[name]
+      all: 1,
+      '1970': 1,
+      now: 1,
+    }[variant]
     const random = splitmix32(0)
     let mismatches = 0
     for (let i = 0; i < (180 * 8 + 1) * (360 * 8 + 1); i++) {
@@ -69,7 +71,7 @@ for (const name of names) {
       const their = GeoTz.find(latitude, longitude).sort()
       if (our.length !== their.length || our.some((timezone, index) => timezone !== their[index])) {
         mismatches++
-        // console.log(JSON.stringify({ name, mismatches, latitude, longitude, our, their }))
+        // console.log(JSON.stringify({ variant, mismatches, latitude, longitude, our, their }))
       }
     }
     assert.equal(mismatches, expectedMismatches)
