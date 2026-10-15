@@ -1,3 +1,4 @@
+import collections
 import json
 import struct
 from pathlib import Path
@@ -58,32 +59,49 @@ def process_longitude(
         elif len(match_indexes) == 1 and geometries[match_indexes[0]].contains(box):
             return (1 << 30) | indexes[match_indexes[0]], bytearray()
         elif depth >= quadtree_max_depth:
+            assert len(match_indexes) <= 8
+            rings = [
+                (zone, [(x - x_min, y - y_min) for x, y in ring])
+                for zone, index in enumerate(match_indexes)
+                for polygon in to_polygons(geometries[index].intersection(box))
+                for ring in polygon
+            ]
+            counts = collections.Counter(
+                (min(a, b), max(a, b), zone)
+                for zone, ring in rings
+                for a, b in zip(ring[-1:] + ring[:-1], ring)
+            )
+            masks = collections.defaultdict(lambda: (0, 0))
+            for (a, b, zone), count in counts.items():
+                inside_mask, on_mask = masks[a, b]
+                masks[a, b] = (inside_mask | (count % 2) << zone, on_mask | 1 << zone)
+            chains = []
+            for _, ring in rings:
+                start = len(chains)
+                for a, b in zip(ring[-1:] + ring[:-1], ring):
+                    mask = masks.pop((min(a, b), max(a, b)), None)
+                    if mask is None:
+                        continue
+                    if len(chains) > start and chains[-1][0] == mask and chains[-1][1][-1] == a:
+                        chains[-1][1].append(b)
+                    else:
+                        chains.append((mask, [a, b]))
+                if (
+                    len(chains) - start > 1
+                    and chains[-1][0] == chains[start][0]
+                    and chains[-1][1][-1] == chains[start][1][0]
+                ):
+                    mask, points = chains.pop()
+                    chains[start] = (mask, points + chains[start][1][1:])
             buffer = bytearray()
             buffer.extend(struct.pack("<B", len(match_indexes)))
             for index in match_indexes:
-                timezone_index = indexes[index]
-                polygons = to_polygons(geometries[index].intersection(box))
-                buffer.extend(struct.pack("<HB", timezone_index, len(polygons)))
-                for polygon in polygons:
-                    polygon_buffer = bytearray()
-                    polygon_buffer.extend(struct.pack("<B", len(polygon)))
-                    xs = [x for ring in polygon for x, _ in ring]
-                    ys = [y for ring in polygon for _, y in ring]
-                    polygon_buffer.extend(
-                        struct.pack(
-                            "<HHHH",
-                            min(xs) - x_min,
-                            max(xs) - x_min,
-                            min(ys) - y_min,
-                            max(ys) - y_min,
-                        )
-                    )
-                    for ring in polygon:
-                        polygon_buffer.extend(struct.pack("<H", len(ring)))
-                        for x, y in ring:
-                            polygon_buffer.extend(struct.pack("<HH", x - x_min, y - y_min))
-                    buffer.extend(struct.pack("<H", len(polygon_buffer)))
-                    buffer.extend(polygon_buffer)
+                buffer.extend(struct.pack("<H", indexes[index]))
+            buffer.extend(struct.pack("<H", len(chains)))
+            for (inside_mask, on_mask), points in chains:
+                buffer.extend(struct.pack("<BBH", inside_mask, on_mask, len(points)))
+                for x, y in points:
+                    buffer.extend(struct.pack("<HH", x, y))
             return 2 << 30, buffer
         else:
             x_mid = (x_min + x_max) // 2

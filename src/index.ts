@@ -40,39 +40,33 @@ const ETC_GMT = Array.from({ length: 25 }, (_, index) =>
 )
 
 /**
- * Checks if the point (x, y) is inside or on the boundary of a polygon ring using the ray casting
- * algorithm.
+ * Checks if the point (x, y) is on a polyline chain or if a ray cast from it in the +x direction
+ * crosses the chain an odd number of times.
  * @param dataView - The DataView of the binary data.
- * @param x - The integer-scaled x coordinate of the point relative to the polygon's base x.
- * @param y - The integer-scaled y coordinate of the point relative to the polygon's base y.
- * @param offset - The offset to the start of the polygon ring.
- * @returns A tuple containing a status ('in' | 'on' | false) indicating if the point is inside, on
- * the boundary, or outside the ring, and the offset to the next polygon ring.
+ * @param x - The integer-scaled x coordinate of the point relative to the cell's base x.
+ * @param y - The integer-scaled y coordinate of the point relative to the cell's base y.
+ * @param offset - The offset to the first point of the chain.
+ * @param pointsCount - The number of points in the chain.
+ * @returns 'on' if the point is on the chain, otherwise a boolean indicating if the number of
+ * crossings is odd.
  */
-const isPointInOrOnRing = (
+const crossChain = (
   dataView: DataView,
   x: number,
   y: number,
   offset: number,
-): ['in' | 'on' | false, number] => {
-  const pointsCount = dataView.getUint16(offset, true)
-  offset += 2
+  pointsCount: number,
+): 'on' | boolean => {
   let xPrevious = dataView.getUint16(offset, true)
   offset += 2
   let yPrevious = dataView.getUint16(offset, true)
   offset += 2
-  const xFirst = xPrevious
-  const yFirst = yPrevious
-  let inside = false
-  for (let i = 1; i <= pointsCount; i++) {
-    let xCurrent = xFirst
-    let yCurrent = yFirst
-    if (i < pointsCount) {
-      xCurrent = dataView.getUint16(offset, true)
-      offset += 2
-      yCurrent = dataView.getUint16(offset, true)
-      offset += 2
-    }
+  let odd = false
+  for (let i = 1; i < pointsCount; i++) {
+    const xCurrent = dataView.getUint16(offset, true)
+    offset += 2
+    const yCurrent = dataView.getUint16(offset, true)
+    offset += 2
     const dx = xCurrent - xPrevious
     const dy = yCurrent - yPrevious
     const dpx = x - xPrevious
@@ -83,58 +77,14 @@ const isPointInOrOnRing = (
       ((x >= xPrevious && x <= xCurrent) || (x >= xCurrent && x <= xPrevious)) &&
       ((y >= yPrevious && y <= yCurrent) || (y >= yCurrent && y <= yPrevious))
     )
-      return ['on', offset]
+      return 'on'
     if (yCurrent > y !== yPrevious > y) {
-      if (yCurrent > yPrevious === crossProduct > 0) inside = !inside
+      if (yCurrent > yPrevious === crossProduct > 0) odd = !odd
     }
     xPrevious = xCurrent
     yPrevious = yCurrent
   }
-  return [inside ? 'in' : false, offset]
-}
-
-/**
- * Checks if the point (x, y) is inside a polygon, accounting for holes (inner rings).
- * @param dataView - The DataView of the binary data.
- * @param x - The integer-scaled x coordinate of the point.
- * @param y - The integer-scaled y coordinate of the point.
- * @param offset - The offset to the start of the polygon.
- * @param xMinBase - The integer-scaled base x coordinate of the polygon.
- * @param yMinBase - The integer-scaled base y coordinate of the polygon.
- * @returns A tuple containing a boolean indicating if the point is inside or on the boundary of the
- * polygon and the offset to the next polygon.
- */
-const isPointInPolygon = (
-  dataView: DataView,
-  x: number,
-  y: number,
-  offset: number,
-  xMinBase: number,
-  yMinBase: number,
-): [boolean, number] => {
-  const size = dataView.getUint16(offset, true)
-  offset += 2
-  const nextPolygonOffset = offset + size
-  const ringsCount = dataView.getUint8(offset)
-  offset += 1
-  const xMin = dataView.getUint16(offset, true) + xMinBase
-  offset += 2
-  const xMax = dataView.getUint16(offset, true) + xMinBase
-  offset += 2
-  const yMin = dataView.getUint16(offset, true) + yMinBase
-  offset += 2
-  const yMax = dataView.getUint16(offset, true) + yMinBase
-  offset += 2
-  if (x < xMin || x > xMax || y < yMin || y > yMax) return [false, nextPolygonOffset]
-  const [where, nextRingOffset] = isPointInOrOnRing(dataView, x - xMinBase, y - yMinBase, offset)
-  if (where !== 'in') return [where === 'on', nextPolygonOffset]
-  offset = nextRingOffset
-  for (let i = 1; i < ringsCount; i++) {
-    const [where, nextRingOffset] = isPointInOrOnRing(dataView, x - xMinBase, y - yMinBase, offset)
-    if (where !== false) return [where === 'on', nextPolygonOffset]
-    offset = nextRingOffset
-  }
-  return [true, nextPolygonOffset]
+  return odd
 }
 
 export type Lookup =
@@ -218,32 +168,34 @@ export const make = (
       if (tag === 1) {
         return [timezones[value & ((1 << 30) - 1)]!]
       } else if (tag === 2) {
-        const output: string[] = []
         offset += value & ((1 << 30) - 1)
         const count = dataView.getUint8(offset)
         offset += 1
-        for (let i = 0; i < count; i++) {
-          const index = dataView.getUint16(offset, true)
-          offset += 2
-          const polygonsCount = dataView.getUint8(offset)
+        const indexesOffset = offset
+        offset += count * 2
+        const chainsCount = dataView.getUint16(offset, true)
+        offset += 2
+        const x = longitudeInteger - xMin
+        const y = latitudeInteger - yMin
+        let inside = 0
+        let on = 0
+        for (let i = 0; i < chainsCount; i++) {
+          const insideMask = dataView.getUint8(offset)
           offset += 1
-          for (let j = 0; j < polygonsCount; j++) {
-            const [isIn, offset_] = isPointInPolygon(
-              dataView,
-              longitudeInteger,
-              latitudeInteger,
-              offset,
-              xMin,
-              yMin,
-            )
-            offset = offset_
-            if (isIn) {
-              if (!output.includes(timezones[index]!)) output.push(timezones[index]!)
-              for (let k = j + 1; k < polygonsCount; k++) {
-                offset += 2 + dataView.getUint16(offset, true)
-              }
-              break
-            }
+          const onMask = dataView.getUint8(offset)
+          offset += 1
+          const pointsCount = dataView.getUint16(offset, true)
+          offset += 2
+          const where = crossChain(dataView, x, y, offset, pointsCount)
+          if (where === 'on') on |= onMask
+          else if (where) inside ^= insideMask
+          offset += pointsCount * 4
+        }
+        const output: string[] = []
+        for (let i = 0; i < count; i++) {
+          if (((inside | on) >> i) & 1) {
+            const timezone = timezones[dataView.getUint16(indexesOffset + i * 2, true)]!
+            if (!output.includes(timezone)) output.push(timezone)
           }
         }
         if (output.length > 0) return output
