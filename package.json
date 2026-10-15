@@ -45,7 +45,7 @@
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "4.7.1",
     "@types/node": "24.19.1",
-    "geo-tz": "8.1.9",
+    "geo-tz": "8.1.10",
     "prettier": "3.9.9",
     "tinybench": "6.2.1",
     "tsdown": "0.23.0",
