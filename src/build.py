@@ -1,7 +1,7 @@
 import collections
+import concurrent.futures
 import json
 import struct
-from collections.abc import Callable
 from pathlib import Path
 
 import shapely
@@ -10,6 +10,8 @@ import tqdm
 import typer
 
 SCALE = 1_000_000
+
+type Node = int | bytes | list[Node]
 
 
 def to_polygons(
@@ -41,8 +43,7 @@ def process_longitude(
     geometries: list[shapely.geometry.base.BaseGeometry],
     indexes: list[int],
     quadtree_max_depth: int,
-    store: Callable[[bytes], int],
-) -> list[int]:
+) -> list[Node]:
     for geometry in geometries:
         shapely.prepare(geometry)
     str_tree = shapely.STRtree(geometries)
@@ -53,7 +54,7 @@ def process_longitude(
         y_min: int,
         y_max: int,
         depth: int,
-    ) -> int:
+    ) -> Node:
         box = shapely.box(x_min, y_min, x_max, y_max)
         match_indexes = sorted(str_tree.query(box, predicate="intersects"))
         if not match_indexes:
@@ -104,11 +105,11 @@ def process_longitude(
                 buffer.extend(struct.pack("<BBH", inside_mask, on_mask, len(points)))
                 for x, y in points:
                     buffer.extend(struct.pack("<HH", x, y))
-            return (2 << 30) | store(bytes(buffer))
+            return bytes(buffer)
         else:
             x_mid = (x_min + x_max) // 2
             y_mid = (y_min + y_max) // 2
-            children = [
+            return [
                 encode(cx_min, x_max, cy_min, cy_max, depth + 1)
                 for cx_min, x_max, cy_min, cy_max in [
                     (x_min, x_mid, y_min, y_mid),
@@ -117,7 +118,6 @@ def process_longitude(
                     (x_mid, x_max, y_mid, y_max),
                 ]
             ]
-            return (3 << 30) | store(struct.pack("<4I", *children))
 
     return [
         encode(
@@ -140,7 +140,8 @@ def map_timezones(
     variant_geometries = [shapely.geometry.shape(feature["geometry"]) for feature in features]
     variant_areas = shapely.area(variant_geometries)
     mapping = []
-    for geometry in tqdm.tqdm(geometries, desc=geojson_path.name):
+    bar = tqdm.tqdm(geometries, desc=geojson_path.name, leave=False, smoothing=0)
+    for geometry in bar:
         geometry_area = geometry.area
         best_iou, best_index = 0.0, 0
         # IoU <= min(area) / max(area), so stop once no remaining variant can beat the best.
@@ -156,6 +157,7 @@ def map_timezones(
             if iou > best_iou:
                 best_iou, best_index = iou, index
         mapping.append(timezones.index(features[best_index]["properties"]["tzid"]))
+    tqdm.tqdm.write(str(bar))
     return mapping
 
 
@@ -166,9 +168,10 @@ def main(lltz_path: Path, geojson_paths: list[Path], *, quadtree_max_depth: int 
     )
     timezones = [f["properties"]["tzid"] for f in features]
     geometries = [shapely.geometry.shape(feature["geometry"]) for feature in features]
-    mappings = [
-        list(range(len(timezones))),
-        *(map_timezones(timezones, geometries, path) for path in geojson_paths[1:]),
+    executor = concurrent.futures.ProcessPoolExecutor()
+    mapping_futures = [
+        concurrent.futures.ThreadPoolExecutor().submit(map_timezones, timezones, geometries, path)
+        for path in geojson_paths[1:]
     ]
     geometries = [
         shapely.affinity.affine_transform(geometry, [SCALE, 0, 0, SCALE, 180 * SCALE, 90 * SCALE])
@@ -185,26 +188,39 @@ def main(lltz_path: Path, geojson_paths: list[Path], *, quadtree_max_depth: int 
             nodes.extend(buffer)
         return nodes_offsets[buffer]
 
+    def resolve(node: Node) -> int:
+        match node:
+            case bytes():
+                return (2 << 30) | store(node)
+            case list():
+                return (3 << 30) | store(struct.pack("<4I", *map(resolve, node)))
+            case _:
+                return node
+
     cells = []
-    for longitude in tqdm.tqdm(range(0, 360), desc=geojson_paths[0].name):
+    for longitude in range(0, 360):
         box = shapely.box(
             longitude * SCALE - 1, 0 * SCALE - 1, (longitude + 1) * SCALE + 1, 180 * SCALE + 1
         )
         indexes = sorted(str_tree.query(box, predicate="intersects"))
         cells.append(
-            process_longitude(
+            executor.submit(
+                process_longitude,
                 longitude,
                 [geometries[index].intersection(box) for index in indexes],
                 indexes,
                 quadtree_max_depth,
-                store,
             )
         )
+    bar = tqdm.tqdm(cells, desc=geojson_paths[0].name, leave=False, smoothing=0)
+    cells = [[resolve(node) for node in cell.result()] for cell in bar]
+    tqdm.tqdm.write(str(bar))
     output = bytearray()
     output.extend(b"LLTZ2\x00\x00\x00")
     timezones_bytes = "\0".join(timezones).encode("utf-8")
     output.extend(struct.pack("<H", len(timezones_bytes)))
     output.extend(timezones_bytes)
+    mappings = [list(range(len(timezones))), *(future.result() for future in mapping_futures)]
     for mapping in mappings:
         output.extend(struct.pack(f"<{len(mapping)}H", *mapping))
     for row in zip(*cells):
