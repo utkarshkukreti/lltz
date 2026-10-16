@@ -138,11 +138,24 @@ def map_timezones(
 ) -> list[int]:
     features = json.loads(geojson_path.read_text())["features"]
     variant_geometries = [shapely.geometry.shape(feature["geometry"]) for feature in features]
+    variant_areas = shapely.area(variant_geometries)
     mapping = []
     for geometry in tqdm.tqdm(geometries, desc=geojson_path.name):
-        areas = shapely.area(shapely.intersection(geometry, variant_geometries))
-        ious = areas / (geometry.area + shapely.area(variant_geometries) - areas)
-        mapping.append(timezones.index(features[ious.argmax()]["properties"]["tzid"]))
+        geometry_area = geometry.area
+        best_iou, best_index = 0.0, 0
+        # IoU <= min(area) / max(area), so stop once no remaining variant can beat the best.
+        bounds = [min(geometry_area, area) / max(geometry_area, area) for area in variant_areas]
+        for bound, index in sorted(zip(bounds, range(len(bounds))), reverse=True):
+            if bound <= best_iou:
+                break
+            if shapely.equals_exact(geometry, variant_geometries[index], 0):
+                area = geometry_area
+            else:
+                area = geometry.intersection(variant_geometries[index]).area
+            iou = area / (geometry_area + variant_areas[index] - area)
+            if iou > best_iou:
+                best_iou, best_index = iou, index
+        mapping.append(timezones.index(features[best_index]["properties"]["tzid"]))
     return mapping
 
 
