@@ -1,6 +1,7 @@
 import collections
 import json
 import struct
+from collections.abc import Callable
 from pathlib import Path
 
 import shapely
@@ -40,7 +41,8 @@ def process_longitude(
     geometries: list[shapely.geometry.base.BaseGeometry],
     indexes: list[int],
     quadtree_max_depth: int,
-) -> list[tuple[int, bytearray]]:
+    store: Callable[[bytes], int],
+) -> list[int]:
     for geometry in geometries:
         shapely.prepare(geometry)
     str_tree = shapely.STRtree(geometries)
@@ -51,13 +53,13 @@ def process_longitude(
         y_min: int,
         y_max: int,
         depth: int,
-    ) -> tuple[int, bytearray]:
+    ) -> int:
         box = shapely.box(x_min, y_min, x_max, y_max)
         match_indexes = sorted(str_tree.query(box, predicate="intersects"))
         if not match_indexes:
-            return 0 << 30, bytearray()
+            return 0 << 30
         elif len(match_indexes) == 1 and geometries[match_indexes[0]].contains(box):
-            return (1 << 30) | indexes[match_indexes[0]], bytearray()
+            return (1 << 30) | indexes[match_indexes[0]]
         elif depth >= quadtree_max_depth:
             assert len(match_indexes) <= 8
             rings = [
@@ -102,7 +104,7 @@ def process_longitude(
                 buffer.extend(struct.pack("<BBH", inside_mask, on_mask, len(points)))
                 for x, y in points:
                     buffer.extend(struct.pack("<HH", x, y))
-            return 2 << 30, buffer
+            return (2 << 30) | store(bytes(buffer))
         else:
             x_mid = (x_min + x_max) // 2
             y_mid = (y_min + y_max) // 2
@@ -115,19 +117,7 @@ def process_longitude(
                     (x_mid, x_max, y_mid, y_max),
                 ]
             ]
-            offsets = []
-            children_buffer = bytearray()
-            for value, buffer2 in children:
-                tag = value >> 30
-                if tag == 0 or tag == 1:
-                    offsets.append(value)
-                else:
-                    offsets.append(value | len(children_buffer))
-                    children_buffer.extend(buffer2)
-            buffer = bytearray()
-            buffer.extend(struct.pack("<4I", *offsets))
-            buffer.extend(children_buffer)
-            return 3 << 30, buffer
+            return (3 << 30) | store(struct.pack("<4I", *children))
 
     return [
         encode(
@@ -172,31 +162,31 @@ def main(lltz_path: Path, geojson_paths: list[Path], *, quadtree_max_depth: int 
         for geometry in geometries
     ]
     str_tree = shapely.STRtree(geometries)
-    cells_buffers = []
+    nodes = bytearray()
+    nodes_offsets: dict[bytes, int] = {}
+
+    def store(buffer: bytes) -> int:
+        if buffer not in nodes_offsets:
+            assert len(nodes) < 1 << 30
+            nodes_offsets[buffer] = len(nodes)
+            nodes.extend(buffer)
+        return nodes_offsets[buffer]
+
+    cells = []
     for longitude in tqdm.tqdm(range(0, 360), desc=geojson_paths[0].name):
         box = shapely.box(
             longitude * SCALE - 1, 0 * SCALE - 1, (longitude + 1) * SCALE + 1, 180 * SCALE + 1
         )
         indexes = sorted(str_tree.query(box, predicate="intersects"))
-        cells_buffers.append(
+        cells.append(
             process_longitude(
                 longitude,
                 [geometries[index].intersection(box) for index in indexes],
                 indexes,
                 quadtree_max_depth,
+                store,
             )
         )
-    cells_buffer = bytearray()
-    cells_offsets = []
-    for latitude_index in range(180):
-        for longitude_index in range(360):
-            value, buffer = cells_buffers[longitude_index][latitude_index]
-            tag = value >> 30
-            if tag == 0 or tag == 1:
-                cells_offsets.append(value)
-            else:
-                cells_offsets.append(value | len(cells_buffer))
-                cells_buffer.extend(buffer)
     output = bytearray()
     output.extend(b"LLTZ2\x00\x00\x00")
     timezones_bytes = "\0".join(timezones).encode("utf-8")
@@ -204,8 +194,9 @@ def main(lltz_path: Path, geojson_paths: list[Path], *, quadtree_max_depth: int 
     output.extend(timezones_bytes)
     for mapping in mappings:
         output.extend(struct.pack(f"<{len(mapping)}H", *mapping))
-    output.extend(struct.pack(f"<{len(cells_offsets)}I", *cells_offsets))
-    output.extend(cells_buffer)
+    for row in zip(*cells):
+        output.extend(struct.pack(f"<{len(row)}I", *row))
+    output.extend(nodes)
     lltz_path.parent.mkdir(parents=True, exist_ok=True)
     lltz_path.write_bytes(output)
 

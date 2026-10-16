@@ -148,27 +148,26 @@ export const make = (
     if (tag !== 0) {
       const latitudeInteger = ((latitude + 90) * SCALE + 0.5) | 0
       const longitudeInteger = ((longitude + 180) * SCALE + 0.5) | 0
-      let offset = baseOffset
+      let offset = 0
       let xMin = longitudeIndex * SCALE
       let yMin = latitudeIndex * SCALE
       let xMax = xMin + SCALE
       let yMax = yMin + SCALE
       while (tag === 3) {
-        offset += value & ((1 << 30) - 1)
+        offset = baseOffset + (value & ((1 << 30) - 1))
         const xMid = (xMin + xMax) >> 1
         const yMid = (yMin + yMax) >> 1
         const quadtreeIndex =
           ((latitudeInteger >= yMid ? 1 : 0) << 1) | (longitudeInteger >= xMid ? 1 : 0)
         value = dataView.getUint32(offset + quadtreeIndex * 4, true)
         tag = value >>> 30
-        offset += 16
         latitudeInteger >= yMid ? (yMin = yMid) : (yMax = yMid)
         longitudeInteger >= xMid ? (xMin = xMid) : (xMax = xMid)
       }
       if (tag === 1) {
         return [timezones[value & ((1 << 30) - 1)]!]
       } else if (tag === 2) {
-        offset += value & ((1 << 30) - 1)
+        offset = baseOffset + (value & ((1 << 30) - 1))
         const count = dataView.getUint8(offset)
         offset += 1
         const indexesOffset = offset

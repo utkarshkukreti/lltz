@@ -6,8 +6,8 @@ This library uses GeoJSON data from [timezone-boundary-builder](https://github.c
 
 ## Features
 
-- **Fast**: Performs **28-47 million lookups per second** (~22-36ns per op) on an Apple M4 Pro CPU.
-- **Tiny Memory Footprint**: Operates directly on raw binary data (ArrayBuffer/Uint8Array). Memory usage is limited to the LLTZ binary file size (approximately **29MiB**), with no additional object overhead.
+- **Fast**: Performs **29-47 million lookups per second** (~21-35ns per op) on an Apple M4 Pro CPU.
+- **Tiny Memory Footprint**: Operates directly on raw binary data (ArrayBuffer/Uint8Array). Memory usage is limited to the LLTZ binary file size (approximately **26MiB**), with no additional object overhead.
 - **Zero Dependencies**: A lightweight, standalone TypeScript library with no external runtime dependencies.
 - **Universal**: Runs in both server (Node.js, Bun) and client (browser) environments.
 - **High Accuracy**: Validated to match [`geo-tz`](https://www.npmjs.com/package/geo-tz) results in **>99.99%** of cases.
@@ -23,36 +23,36 @@ $ node benches/index.ts lltz:all geo-tz:all
 ┌─────────┬─────────────────────────────────────────────┬───────────────────┬───────────────────┬────────────────────────┬────────────────────────┬─────────┐
 │ (index) │ Task name                                   │ Latency avg (ns)  │ Latency med (ns)  │ Throughput avg (ops/s) │ Throughput med (ops/s) │ Samples │
 ├─────────┼─────────────────────────────────────────────┼───────────────────┼───────────────────┼────────────────────────┼────────────────────────┼─────────┤
-│ 0       │ 'lltz: all: 1000x <random>'                 │ '36212 ± 0.28%'   │ '35584 ± 1624.0'  │ '28026 ± 0.10%'        │ '28103 ± 1273'         │ 27616   │
-│ 1       │ 'lltz: all: 1000x <random> in central US'   │ '21585 ± 0.21%'   │ '21292 ± 875.00'  │ '46990 ± 0.08%'        │ '46966 ± 1937'         │ 46329   │
-│ 2       │ 'geo-tz: all: 1000x <random>'               │ '1355153 ± 5.49%' │ '974479 ± 333396' │ '1032 ± 3.43%'         │ '1026 ± 396'           │ 738     │
-│ 3       │ 'geo-tz: all: 1000x <random> in central US' │ '310248 ± 1.02%'  │ '299292 ± 15750'  │ '3314 ± 0.38%'         │ '3341 ± 177'           │ 3224    │
+│ 0       │ 'lltz: all: 1000x <random>'                 │ '35340 ± 0.23%'   │ '34792 ± 1626.0'  │ '28667 ± 0.10%'        │ '28742 ± 1345'         │ 28297   │
+│ 1       │ 'lltz: all: 1000x <random> in central US'   │ '21459 ± 0.21%'   │ '21250 ± 875.00'  │ '47195 ± 0.07%'        │ '47059 ± 1920'         │ 46601   │
+│ 2       │ 'geo-tz: all: 1000x <random>'               │ '1366524 ± 5.57%' │ '996770 ± 376750' │ '1040 ± 3.63%'         │ '1003 ± 398'           │ 732     │
+│ 3       │ 'geo-tz: all: 1000x <random> in central US' │ '308456 ± 0.97%'  │ '299646 ± 13687'  │ '3319 ± 0.34%'         │ '3337 ± 153'           │ 3242    │
 └─────────┴─────────────────────────────────────────────┴───────────────────┴───────────────────┴────────────────────────┴────────────────────────┴─────────┘
 ```
 
-lltz is roughly 27x faster than geo-tz for random lookups in the entire world and 14x faster for random lookups in the central US.
+lltz is roughly 28x faster than geo-tz for random lookups in the entire world and 14x faster for random lookups in the central US.
 
 ### Memory
 
 ```
 $ node benches/memory.ts lltz:all && node benches/memory.ts geo-tz:all
 lltz: all
-Δ time: 53.102 ms
-Δ rss: 41.656 MiB
-Δ heapTotal: 3.750 MiB
-Δ heapUsed: 1.133 MiB
-Δ external: 26.640 MiB
-Δ arrayBuffers: 26.476 MiB
+Δ time: 61.850 ms
+Δ rss: 38.500 MiB
+Δ heapTotal: 3.500 MiB
+Δ heapUsed: 0.086 MiB
+Δ external: 23.912 MiB
+Δ arrayBuffers: 23.749 MiB
 geo-tz: all
-Δ time: 1484.815 ms
-Δ rss: 1622.578 MiB
-Δ heapTotal: 1566.344 MiB
-Δ heapUsed: 1485.296 MiB
-Δ external: -1.802 MiB
-Δ arrayBuffers: -1.841 MiB
+Δ time: 1825.895 ms
+Δ rss: 1637.281 MiB
+Δ heapTotal: 1582.344 MiB
+Δ heapUsed: 1466.074 MiB
+Δ external: -1.584 MiB
+Δ arrayBuffers: -1.622 MiB
 ```
 
-Loading the data from disk and then querying 1 million random points is 28x faster with lltz than with geo-tz and uses 39x less memory.
+Loading the data from disk and then querying 1 million random points is 30x faster with lltz than with geo-tz and uses 43x less memory.
 
 ## Usage
 
@@ -123,7 +123,7 @@ The LLTZ binary file format is designed for efficient querying on raw bytes. It 
 - **Timezone Strings**: A null-terminated list of timezone IDs.
 - **Variant Mappings**: For each variant (`all`, `1970`, `now`), the index of the timezone ID each timezone maps to in that variant.
 - **Grid Index**: A 180x360 coarse grid (1-degree resolution) for O(1) access.
-- **QuadTree Nodes**: Hierarchical spatial subdivision for complex regions.
+- **QuadTree Nodes**: Hierarchical spatial subdivision for complex regions. Identical nodes and leaves are stored once.
 - **Boundary Chains**: Polylines of relative integer coordinates, each stored once and shared by the timezones on both sides, for final containment checks.
 
 ### Builder & Runtime
