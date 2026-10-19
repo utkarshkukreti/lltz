@@ -128,7 +128,10 @@ export const make = (
     .split('\0')
   offset += timezonesLength
   const variantIndex = VARIANTS.indexOf(variant)
-  if (variantIndex === -1) throw new Error(`invalid variant: ${JSON.stringify(variant)}`)
+  if (variantIndex === -1)
+    throw new Error(
+      `invalid variant: ${typeof variant === 'string' ? JSON.stringify(variant) : typeof variant}`,
+    )
   const mappingOffset = offset + variantIndex * names.length * 2
   const timezones = names.map(
     (_, index) => names[dataView.getUint16(mappingOffset + index * 2, true)]!,
