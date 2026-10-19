@@ -64,10 +64,11 @@ pnpm add lltz # or npm, yarn, bun
 
 ### Data
 
-The `timezones.lltz` file included in the NPM package contains all three data variants described in the [timezone-boundary-builder README](https://github.com/evansiroky/timezone-boundary-builder#readme): `all` (`timezones.geojson`, the default, with the most comprehensive coverage), `1970` (`timezones-1970.geojson`) and `now` (`timezones-now.geojson`). Pick one with the second argument of `make`:
+The `timezones.lltz` file included in the NPM package contains all three data variants described in the [timezone-boundary-builder README](https://github.com/evansiroky/timezone-boundary-builder#readme): `all` (`timezones.geojson`, the default, with the most comprehensive coverage), `1970` (`timezones-1970.geojson`) and `now` (`timezones-now.geojson`). Pick one when creating the lookup:
 
 ```typescript
-const lookup = Lltz.make(buffer, 'now')
+Lltz.make('now') // lltz/server
+Lltz.make(buffer, 'now') // lltz
 ```
 
 ### Node.js / Bun
