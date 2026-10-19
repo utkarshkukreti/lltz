@@ -156,6 +156,7 @@ def map_timezones(
             iou = area / (geometry_area + variant_areas[index] - area)
             if iou > best_iou:
                 best_iou, best_index = iou, index
+        assert best_iou > 0
         mapping.append(timezones.index(features[best_index]["properties"]["tzid"]))
     tqdm.tqdm.write(str(bar))
     return mapping
