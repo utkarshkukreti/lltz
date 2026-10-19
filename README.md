@@ -87,7 +87,7 @@ console.log(timezones) // ['America/New_York']
 
 #### Manual Data Loading
 
-If you need to use a different data file or have custom requirements:
+To load the data yourself, for example from a custom path or a file you built with `make`, use `make` from `lltz` with the file's bytes. `make` from `lltz/server` always loads the built-in file:
 
 ```typescript
 import fs from 'node:fs'
