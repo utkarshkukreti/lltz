@@ -206,9 +206,9 @@ export const make = (
       }
     }
     if (latitude === 90) {
-      return DEFAULT_LATITUDE_90
+      return DEFAULT_LATITUDE_90.slice()
     } else if (longitude === -180 || longitude === 180) {
-      return DEFAULT_LONGITUDE_ABS_180
+      return DEFAULT_LONGITUDE_ABS_180.slice()
     } else {
       const min = Math.ceil(longitude / 15 - 0.5)
       const max = Math.floor(longitude / 15 + 0.5)
