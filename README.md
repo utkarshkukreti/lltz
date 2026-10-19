@@ -78,7 +78,7 @@ const lookup = Lltz.make(buffer, 'now')
 import * as Lltz from 'lltz/server'
 
 const lookup = Lltz.make() // Automatically loads the built-in timezones.lltz file
-// ↳ or Lltz.make(undefined, '1970')
+// ↳ or Lltz.make('1970')
 
 const timezones = lookup(40.7128, -74.006) // New York
 console.log(timezones) // ['America/New_York']

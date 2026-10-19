@@ -16,18 +16,12 @@ const load = (): Uint8Array => {
 }
 
 /**
- * Creates a timezone lookup function from the provided binary data.
+ * Creates a timezone lookup function from the built-in `timezones.lltz` file.
  *
- * @param arrayBufferOrUint8Array - Optional binary data containing the timezone database (LLTZ
- * format). If not provided, the built-in `timezones.lltz` file will be automatically loaded.
  * @param variant - The data variant to use: 'all' (default), '1970' or 'now'.
  * @returns {Lookup} A timezone lookup function.
- * @throws An error if the binary data or the variant is invalid or if the built-in data file cannot
- * be loaded.
+ * @throws An error if the variant is invalid or if the built-in data file cannot be loaded.
  */
-export const make = (
-  arrayBufferOrUint8Array?: ArrayBuffer | Uint8Array,
-  variant?: Variant,
-): Lookup => make_(arrayBufferOrUint8Array ?? load(), variant)
+export const make = (variant?: Variant): Lookup => make_(load(), variant)
 
 export type { Lookup, Variant }
