@@ -138,7 +138,7 @@ export const make = (
   offset += 180 * 360 * 4
   const baseOffset = offset
   return (latitude: number, longitude: number): string[] => {
-    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180)
+    if (!(latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180))
       throw new Error(`invalid latitude or longitude: ${latitude}, ${longitude}`)
     const latitudeIndex = Math.min((latitude + 90) | 0, 179)
     const longitudeIndex = Math.min((longitude + 180) | 0, 359)

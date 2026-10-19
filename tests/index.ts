@@ -77,3 +77,17 @@ for (const variant of variants) {
     assert.equal(mismatches, expectedMismatches)
   })
 }
+
+test('invalid latitude or longitude', () => {
+  const get = Lltz.make(data)
+  for (const [latitude, longitude] of [
+    [NaN, 0],
+    [0, NaN],
+    [-90.5, 0],
+    [90.5, 0],
+    [0, -180.5],
+    [0, 180.5],
+  ] as const) {
+    assert.throws(() => get(latitude, longitude), /invalid latitude or longitude/)
+  }
+})
