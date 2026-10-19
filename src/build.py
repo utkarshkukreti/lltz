@@ -28,14 +28,14 @@ def to_polygons(
         case shapely.geometry.Polygon():
             return [
                 [
-                    [(int(round(x)), int(round(y))) for x, y in ring.coords][:-1]
+                    [(round(x), round(y)) for x, y in ring.coords][:-1]
                     for ring in [geometry.exterior, *geometry.interiors]
                 ]
             ]
         case shapely.geometry.LineString() | shapely.geometry.Point():
-            return [[[(int(round(x)), int(round(y))) for x, y in geometry.coords]]]
+            return [[[(round(x), round(y)) for x, y in geometry.coords]]]
         case _:
-            raise Exception(f"unknown geometry type: {type(geometry)}")
+            raise TypeError(f"unknown geometry type: {type(geometry)}")
 
 
 def process_longitude(
@@ -127,7 +127,7 @@ def process_longitude(
             (latitude + 1) * SCALE,
             0,
         )
-        for latitude in range(0, 180)
+        for latitude in range(180)
     ]
 
 
@@ -206,7 +206,7 @@ def main(lltz_path: Path, geojson_paths: list[Path], *, quadtree_max_depth: int 
         ]
         str_tree = shapely.STRtree(geometries)
         cells = []
-        for longitude in range(0, 360):
+        for longitude in range(360):
             box = shapely.box(
                 longitude * SCALE - 1, 0 * SCALE - 1, (longitude + 1) * SCALE + 1, 180 * SCALE + 1
             )
