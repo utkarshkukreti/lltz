@@ -22,7 +22,8 @@ const load = (): Uint8Array => {
  * format). If not provided, the built-in `timezones.lltz` file will be automatically loaded.
  * @param variant - The data variant to use: 'all' (default), '1970' or 'now'.
  * @returns {Lookup} A timezone lookup function.
- * @throws An error if the binary data is invalid or if the built-in data file cannot be loaded.
+ * @throws An error if the binary data or the variant is invalid or if the built-in data file cannot
+ * be loaded.
  */
 export const make = (
   arrayBufferOrUint8Array?: ArrayBuffer | Uint8Array,

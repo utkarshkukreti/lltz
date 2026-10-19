@@ -104,7 +104,7 @@ export type Lookup =
  * @param arrayBufferOrUint8Array - The binary data containing the timezone database (LLTZ format).
  * @param variant - The data variant to use: 'all' (default), '1970' or 'now'.
  * @returns {Lookup} A timezone lookup function.
- * @throws An error if the binary data is invalid.
+ * @throws An error if the binary data or the variant is invalid.
  */
 export const make = (
   arrayBufferOrUint8Array: ArrayBuffer | Uint8Array,
@@ -127,7 +127,9 @@ export const make = (
     .decode(bytes.subarray(offset, offset + timezonesLength))
     .split('\0')
   offset += timezonesLength
-  const mappingOffset = offset + VARIANTS.indexOf(variant) * names.length * 2
+  const variantIndex = VARIANTS.indexOf(variant)
+  if (variantIndex === -1) throw new Error(`invalid variant: ${JSON.stringify(variant)}`)
+  const mappingOffset = offset + variantIndex * names.length * 2
   const timezones = names.map(
     (_, index) => names[dataView.getUint16(mappingOffset + index * 2, true)]!,
   )
