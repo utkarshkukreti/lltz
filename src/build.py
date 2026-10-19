@@ -163,6 +163,8 @@ def map_timezones(
 
 
 def main(lltz_path: Path, geojson_paths: list[Path], *, quadtree_max_depth: int = 4):
+    if len(geojson_paths) != 3:
+        raise typer.BadParameter("expected 3 geojson files: all, 1970 and now")
     features = sorted(
         json.loads(geojson_paths[0].read_text())["features"],
         key=lambda x: x["properties"]["tzid"],
