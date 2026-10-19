@@ -110,8 +110,8 @@ def process_longitude(
             x_mid = (x_min + x_max) // 2
             y_mid = (y_min + y_max) // 2
             return [
-                encode(cx_min, x_max, cy_min, cy_max, depth + 1)
-                for cx_min, x_max, cy_min, cy_max in [
+                encode(cx_min, cx_max, cy_min, cy_max, depth + 1)
+                for cx_min, cx_max, cy_min, cy_max in [
                     (x_min, x_mid, y_min, y_mid),
                     (x_mid, x_max, y_min, y_mid),
                     (x_min, x_mid, y_mid, y_max),
