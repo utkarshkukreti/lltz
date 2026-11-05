@@ -20,7 +20,7 @@
   },
   "license": "MIT",
   "type": "module",
-  "packageManager": "pnpm@12.12.1",
+  "packageManager": "pnpm@12.17.0",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -47,8 +47,8 @@
     "@types/node": "24.19.2",
     "geo-tz": "8.1.11",
     "prettier": "3.9.10",
-    "tinybench": "6.2.2",
-    "tsdown": "0.23.1",
+    "tinybench": "6.2.3",
+    "tsdown": "0.23.4",
     "typescript": "7.0.2"
   }
 }
