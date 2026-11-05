@@ -22,10 +22,10 @@ jobs:
       - run: pnpm test
       - run: pnpm bench
       - run: pnpm bench:memory
-      - uses: softprops/action-gh-release@v2
+      - run: gh release create --verify-tag --title "$GITHUB_REF_NAME" "$GITHUB_REF_NAME" data/*.lltz
         if: startsWith(github.ref, 'refs/tags/v')
-        with:
-          files: |
-            data/*.lltz
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
       - run: npm publish --access public --provenance
         if: startsWith(github.ref, 'refs/tags/v')
